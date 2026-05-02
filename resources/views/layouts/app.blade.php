@@ -166,7 +166,7 @@
                             <img src="{{ asset('products/' . @$data['social']->logo) }}" alt="" width="150"
                                 height="55"/>
                         @else
-                            Agency Rauen
+                            André Kunizaki
                         @endif
                     </a>
                 </div>
@@ -207,7 +207,7 @@
                                 <img src="{{ asset('products/' . @$data['social']->logo) }}" alt=""
                                     width="185" height="55" />
                             @else
-                                Agency Rauen
+                                André Kunizaki
                             @endif
                         </a>
                         <div class="app-header-mobile"><button type="button"

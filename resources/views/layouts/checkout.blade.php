@@ -427,7 +427,7 @@
                         Rauen</span></a>
                 </div>
             @else
-                <a href="https://agencyrauen.com/" target="_blank" style="text-decoration: none"><span
+                <a href="https://wa/5534997153856" target="_blank" style="text-decoration: none"><span
                         class="text-muted" style="color: #fff!important; font-size: 12px;">Desenvolvido por Agency
                         Rauen</span></a>
                 </div>
@@ -454,13 +454,13 @@
                         rel="noreferrer noopener" role="button"><i class="bi bi-whatsapp"
                             style="font-size: 20px;"></i></a>
                     @if (env('APP_NAME') == 'Laravel')
-                        <img src="{{ asset('images/original.png') }}" title="Sistema Original Agency Rauen"
+                        <img src="{{ asset('images/original.png') }}" title="Sistema Original"
                             style="opacity: 0.2; float: right" width="50" alt="">
                     @endif
                     @if (env('FOOTER_CLIENTE'))
                         <br>
-                        <a href="https://agencyrauen.com/" target="_blank" style="text-decoration: none"><span
-                                class="text-muted" style="color: #fff!important; font-size: 12px;">Desenvolvido por Agency Rauen</span></a>
+                        <a href="https://wa.me/5534997153856" target="_blank" style="text-decoration: none"><span
+                                class="text-muted" style="color: #fff!important; font-size: 12px;">Powered by André Kunizaki</span></a>
                     @endif
                 </div>
             </footer>
@@ -470,8 +470,8 @@
                     <span class="text-muted" style="color: #fff!important;">{{ @$data['social']->footer }}</span>
                     @if (env('FOOTER_CLIENTE'))
                         <br>
-                        <a href="https://apostanarifa.com.br/" target="_blank" style="text-decoration: none"><span
-                                class="text-muted" style="color: #fff!important; font-size: 12px;">Desenvolvido por Agency Rauen</span></a>
+                        <a href="https://sorteios.videiraaraguari.com.br/" target="_blank" style="text-decoration: none"><span
+                                class="text-muted" style="color: #fff!important; font-size: 12px;">Powered by André Kunizaki</span></a>
                     @endif
                 </div>
             </footer>

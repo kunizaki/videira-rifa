@@ -6,8 +6,8 @@
                 class="text-muted" style="color: #fff!important; font-size: 12px;">Desenvolvido por ACSHost</span></a>
         </div>
     @else
-        <a href="https://acshost.com.br/" target="_blank" style="text-decoration: none"><span
-                class="text-muted" style="color: #fff!important; font-size: 12px;">Desenvolvido por ACSHost</span></a>
+        <a href="https://wa.me/5534997153856" target="_blank" style="text-decoration: none"><span
+                class="text-muted" style="color: #fff!important; font-size: 12px;">Powered by André Kunizaki</span></a>
         </div>
     @endif
 </footer>

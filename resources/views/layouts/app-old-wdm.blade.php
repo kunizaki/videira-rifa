@@ -91,7 +91,7 @@
                         <img src="{{ asset('products/' . @$data['social']->logo) }}" alt="" width="100"
                             height="50">
                     @else
-                        Agency Rauen
+                        André Kunizaki
                     @endif
                 </a>
             </div>
@@ -244,7 +244,7 @@
                         style="font-size: 20px;"></i></a>
                 @if (env('FOOTER_CLIENTE'))
                     <br>
-                    <a href="https://agencyrauen.com/" target="_blank" style="text-decoration: none"><span class="text-muted" style="color: #fff!important; font-size: 12px;">Desenvolvido por Agency Rauen</span></a>
+                    <a href="https://wa.me/5534997153856" target="_blank" style="text-decoration: none"><span class="text-muted" style="color: #fff!important; font-size: 12px;">Powered by André Kunizaki</span></a>
                 @endif
             </div>
         </footer>
@@ -254,7 +254,7 @@
                 <span class="text-muted" style="color: #fff!important;">{{ @$data['social']->footer }}</span>
                 @if (env('FOOTER_CLIENTE'))
                     <br>
-                    <a href="https://agencyrauen.com/" target="_blank" style="text-decoration: none"><span class="text-muted" style="color: #fff!important; font-size: 12px;">Desenvolvido por Agency Rauen</span></a>
+                    <a href="https://wa.me/5534997153856" target="_blank" style="text-decoration: none"><span class="text-muted" style="color: #fff!important; font-size: 12px;">Powered by André Kunizaki</span></a>
                 @endif
             </div>
         </footer>
