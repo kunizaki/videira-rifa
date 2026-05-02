@@ -70,10 +70,16 @@
         </div>
         <div class="max-w-[600px] mx-auto">
             <div class="flex flex-col items-center pt-14">
+                @if ($ticket->pagos > 0)
+                     <h1 class="text-white font-medium text-xl px-4 py-5 text-center mb-16 md:text-3xl md:mb-10">
+                         Pagamento processado. Boa sorte!
+                     </h1>
+                @else
+                    <h1 class="text-white font-medium text-xl px-4 py-5 text-center mb-16 md:text-3xl md:mb-10">
+                        Falta pouco! Copie e cole o código a seguir no seu app de pagamentos ou Internet Banking
+                    </h1>
+                @endif
 
-                <h1 class="text-white font-medium text-xl px-4 py-5 text-center mb-16 md:text-3xl md:mb-10">
-                    Falta pouco! Copie e cole o código a seguir no seu app de pagamentos ou Internet Banking
-                </h1>
 
                 <div class="bg-white shadow-lg rounded-lg p-6 mx-4 md:w-full mx-auto space-y-10 mb-5">
                     <div class="w-full flex items-start">

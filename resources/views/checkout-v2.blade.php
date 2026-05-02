@@ -191,7 +191,12 @@
             const difference = countdownDate - now;
             const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-            countdownTime.innerHTML = `${minutes}:${seconds}`;
+            
+            // Formatação com zero à esquerda
+            const displayMinutes = minutes < 10 ? '0' + minutes : minutes;
+            const displaySeconds = seconds < 10 ? '0' + seconds : seconds;
+            countdownTime.innerHTML = `${displayMinutes}:${displaySeconds}`;
+            
             const percent = Math.floor((difference / totalMilliseconds) * 100);
             console.log(percent);
             progressFill.style.width = `${percent}%`;
@@ -209,31 +214,31 @@
             fetch("{{ route('findPixStatus', $codePIXID . '-' . $productID) }}", {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
-                            'content'),
-                        'Content-Type': 'application/json'
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({
                         'id': "{{ $codePIXID }}",
                         'product_id': "{{ $productID }}"
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    console.log(data);
+                    console.log("Polling payment status:", data);
                     if (data.status === true) {
-                        orderDetailsSection.classList.add('hidden');
-                        TitleCheckout.innerHTML =
-                            'Pagamento Aprovado! Agradecemos sua participação no sorteio, boa sorte!';
-                        cotas.innerHTML = data.cotas;
-                        retorno.classList.remove('hidden');
-                        clearInterval(pay)
-                        clearInterval(timer)
+                        console.log("Pagamento confirmado, redirecionando para: {{ route('getComprovante', $participante->id) }}");
+                        window.location.href = "{{ route('getComprovante', $participante->id) }}";
                     }
 
                 })
                 .catch(error => {
-                    // Trate os erros caso ocorram
+                    console.error("Erro na verificação automática:", error);
                 });
         }, 4000);
 
@@ -274,29 +279,44 @@
             fetch("{{ route('findPixStatus', $codePIXID . '-' . $productID) }}", {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
-                            'content'),
-                        'Content-Type': 'application/json'
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({
                         'id': "{{ $codePIXID }}",
                         'product_id': "{{ $productID }}"
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    console.log(data);
+                    console.log("Manual payment check:", data);
                     if (data.status === true) {
-                        orderDetailsSection.classList.add('hidden');
-                        TitleCheckout.innerHTML =
-                            'Pagamento Aprovado! Agradecemos sua participação no sorteio, boa sorte!';
-                        cotas.innerHTML = data.cotas;
-                        retorno.classList.remove('hidden');
+                        console.log("Pagamento confirmado via botão, redirecionando para: {{ route('getComprovante', $participante->id) }}");
+                        window.location.href = "{{ route('getComprovante', $participante->id) }}";
+                    } else {
+                        Toastify({
+                            text: "Pagamento ainda não detectado. Por favor, aguarde alguns instantes e tente novamente.",
+                            duration: 3000,
+                            newWindow: true,
+                            close: true,
+                            gravity: "bottom",
+                            position: "center",
+                            stopOnFocus: true,
+                            style: {
+                                background: "#EF4444",
+                            },
+                        }).showToast();
                     }
 
                 })
                 .catch(error => {
-                    // Trate os erros caso ocorram
+                    console.error("Erro no clique do botão:", error);
                 });
             verifyPaymentBtn.innerHTML = 'Verificando...';
             verifyPaymentBtn.classList.add('bg-green-600');

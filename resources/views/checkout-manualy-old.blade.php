@@ -433,11 +433,7 @@
 
                     success: function(data) {
                         if (data.status === true) {
-                            document.getElementById("divCart").className = 'hidden';
-                            document.getElementById("divPixSuccess").style.display = 'block'
-                            clearInterval(timerPix);
-                            clearInterval(timerInterval);
-
+                            window.location.href = "{{ route('getComprovante', $participante->id) }}";
                         }
                     }
                 });

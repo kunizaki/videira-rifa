@@ -454,6 +454,7 @@
                         @endif
                     </section>
                     <section class="row mt-5 px-5">
+                        <button id="verify-payment-btn" type="button" class="btn mb-2" style="background-color: #17A34A; color:#fff">Já fiz o pagamento</button>
                         <button id="codepix" type="button" class="btn" style="background-color: #17A34A; color:#fff" data-toggle="tooltip" data-copytext="{{$codePIX}}" data-placement="top" title="COPIAR" onclick="copiar()">Copiar código</button>
                     </section>
                     {{-- <div class="text-center">
@@ -522,7 +523,7 @@
                     @if ($key > 0)
                     ,
                     @endif
-                    {{ $number }}
+                    {{ (int)$number }}
                     @endforeach
                     
                     @endif
@@ -674,6 +675,29 @@
 
 
         $(document).ready(function() {
+            $('#verify-payment-btn').click(function() {
+                $.ajax({
+                    url: "{{ route('findPixStatus', $codePIXID . '-' . $productID) }}",
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST',
+                    dataType: 'json',
+                    data: {
+                        'id': "{{ $codePIXID }}",
+                        'product_id': "{{ $productID }}"
+                    },
+                    success: function(data) {
+                        if (data.status === true) {
+                            window.location.href = "{{ route('getComprovante', $participante->id) }}";
+                        } else {
+                            alert("Pagamento ainda não detectado. Por favor, aguarde alguns instantes.");
+                        }
+                    }
+                });
+            });
+
             let timerPix = setInterval(function checkPixSuccess() {
                 $.ajax({
                     url: "{{ route('findPixStatus', $codePIXID . '-' . $productID) }}",
@@ -691,17 +715,7 @@
 
                     success: function(data) {
                         if (data.status === true) {
-                            document.getElementById("divCart").classList.add('d-none');
-                            document.getElementById("card-comp").classList.add('d-block');
-                            document.getElementById('payment-icon').style.color = 'green';
-                            document.getElementById('payment-text').innerHTML =
-                                'PAGAMENTO CONFIRMADO!'
-                            document.getElementById('payment-sub').innerHTML = 'Boa Sorte !'
-                            document.getElementById('cotas-pending').innerHTML = data.cotas;
-                            clearInterval(timerPix);
-                            clearInterval(timerInterval);
-                            document.getElementById("progress-bar").classList.add('d-none');
-
+                            window.location.href = "{{ route('getComprovante', $participante->id) }}";
                         }
                     }
                 });

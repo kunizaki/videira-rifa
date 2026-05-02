@@ -356,6 +356,37 @@
                                             <br />
                                             {{ $reserva->pagos + $reserva->reservados }} COTAS
                                         </small>
+                                        <div class="compra-cotas font-xs mt-1" style="max-height: 100px;overflow: auto;">
+                                            @if ($reserva->pagos > 0)
+                                                @if ($reserva->rifa()->modo_de_jogo == 'numeros')
+                                                    <small class="text-muted" style="font-size: 10px;">NÚMEROS: </small>
+                                                    @foreach ($reserva->pagos() as $numPago)
+                                                        <span class="badge bg-success" style="font-size: 10px;">{{ $numPago }}</span>
+                                                    @endforeach
+                                                @else
+                                                    <small class="text-muted" style="font-size: 10px;">COTAS: </small>
+                                                    @foreach ($reserva->pagos() as $numPago)
+                                                        <span class="badge bg-success" style="font-size: 10px;">{{ $numPago->grupoFazendinha() }}</span>
+                                                    @endforeach
+                                                @endif
+                                            @elseif($reserva->reservados > 0)
+                                                @if ($reserva->rifa()->type_raffles == 'automatico')
+                                                    <small class="text-muted" style="font-size: 10px;">Números gerados após o pagamento</small>
+                                                @else
+                                                    @if ($reserva->rifa()->modo_de_jogo == 'numeros')
+                                                        <small class="text-muted" style="font-size: 10px;">NÚMEROS: </small>
+                                                        @foreach ($reserva->reservados() as $numRes)
+                                                            <span class="badge bg-secondary" style="font-size: 10px;">{{ $numRes }}</span>
+                                                        @endforeach
+                                                    @else
+                                                        <small class="text-muted" style="font-size: 10px;">COTAS: </small>
+                                                        @foreach ($reserva->reservados() as $numRes)
+                                                            <span class="badge bg-secondary" style="font-size: 10px;">{{ $numRes->grupoFazendinha() }}</span>
+                                                        @endforeach
+                                                    @endif
+                                                @endif
+                                            @endif
+                                        </div>
 
                                         {{-- @if ($reserva->pagos > 0)
                                         @if ($reserva->is_premiada()->ganhou)

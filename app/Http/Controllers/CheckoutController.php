@@ -199,20 +199,29 @@ class CheckoutController extends Controller
         // }
 
         if($PayRaffleNumber){
+            if ($PayRaffleNumber->status == 'Aprovado') {
+                $participante = Participante::find($PayRaffleNumber->participant_id);
+                if ($participante) {
+                    $response = [
+                        'status' => TRUE,
+                        'cotas' => view('layouts.cotas-checkout', ['participante' => $participante])->render()
+                    ];
+                    return json_encode($response);
+                }
+            }
+
             if ($PayRaffleNumber->full_pix == 'gratis') {
                 $participante = Participante::find($PayRaffleNumber->participant_id);
-                $rifa = $participante->rifa();
-    
-                $rifa->confirmPayment($participante->id);
-    
-                $cotasHTML = view('layouts.cotas-checkout', ['participante' => $participante])->render();
-    
-                $response = [
-                    'status' => TRUE,
-                    'cotas' => $cotasHTML
-                ];
-    
-                return json_encode($response);
+                if ($participante) {
+                    $rifa = $participante->rifa();
+                    $rifa->confirmPayment($participante->id);
+                    $cotasHTML = view('layouts.cotas-checkout', ['participante' => $participante])->render();
+                    $response = [
+                        'status' => TRUE,
+                        'cotas' => $cotasHTML
+                    ];
+                    return json_encode($response);
+                }
             }
         }
         
@@ -241,29 +250,28 @@ class CheckoutController extends Controller
                     ->select('participant_id')
                     ->where('key_pix', $realPixID)->get();
 
-                $participante = Participante::find($PayRaffleNumber[0]->participant_id);
-                $rifa = $participante->rifa();
+                if (isset($PayRaffleNumber[0])) {
+                    $participante = Participante::find($PayRaffleNumber[0]->participant_id);
+                    $rifa = $participante->rifa();
 
-                $rifa->confirmPayment($participante->id);
+                    $rifa->confirmPayment($participante->id);
 
-                $cotasHTML = view('layouts.cotas-checkout', ['participante' => $participante])->render();
+                    $cotasHTML = view('layouts.cotas-checkout', ['participante' => $participante])->render();
 
-                foreach ($PayRaffleNumber as $keyNumbers => $valNumbers) :
-                    CheckoutController::savePayedRaffles($valNumbers->participant_id, $realProductID);
+                    foreach ($PayRaffleNumber as $keyNumbers => $valNumbers) :
+                        CheckoutController::savePayedRaffles($valNumbers->participant_id, $realProductID);
+                    endforeach;
+                    
+                    $response = [
+                        'status' => TRUE,
+                        'cotas' => $cotasHTML
+                    ];
 
-                    $participante = Participante::find($valNumbers->participant_id);
-
-
-                endforeach;
-                $response = [
-                    'status' => TRUE,
-                    'cotas' => $cotasHTML
-                ];
-
-                return json_encode($response);
+                    return json_encode($response);
+                }
             }
 
-            return $resp->status;
+            return json_encode(['status' => false, 'message' => $resp->status]);
         }
         // Paggue
         else if (strlen($id) >= 25) {
@@ -271,11 +279,10 @@ class CheckoutController extends Controller
             array_pop($cleanID);
             $hash = implode('-', $cleanID);
             $paymentPix = DB::table('payment_pix')->where('key_pix', '=', $hash)->first();
-            $participante = Participante::find($paymentPix->participant_id);
-            $rifa = $participante->rifa();
-
-
-            if ($paymentPix->status == 'Aprovado') {
+            
+            if ($paymentPix && $paymentPix->status == 'Aprovado') {
+                $participante = Participante::find($paymentPix->participant_id);
+                $rifa = $participante->rifa();
                 $rifa->confirmPayment($participante->id);
                 $response = [
                     'status' => TRUE,
@@ -284,6 +291,8 @@ class CheckoutController extends Controller
 
                 return json_encode($response);
             }
+
+            return json_encode(['status' => false]);
         }
         //MP
         else {
@@ -297,14 +306,9 @@ class CheckoutController extends Controller
 
             \MercadoPago\SDK::setAccessToken($secretKey);
 
-            $payment = new \MercadoPago\Payment();
-
             $payment = \MercadoPago\Payment::find_by_id($realPixID);
-            $payment->capture = true;
-            $payment->update();
 
-
-            if ($payment->status == "approved" && $payment->status_detail == "accredited") {
+            if ($payment && $payment->status == "approved" && $payment->status_detail == "accredited") {
 
 
                 $ApprovedPayment = DB::table('payment_pix')
@@ -315,21 +319,21 @@ class CheckoutController extends Controller
                     ->select('participant_id')
                     ->where('key_pix', $realPixID)->get();
 
-                $participante = Participante::find($PayRaffleNumber[0]->participant_id);
-                $rifa = $participante->rifa();
-                $rifa->confirmPayment($participante->id);
+                if (isset($PayRaffleNumber[0])) {
+                    $participante = Participante::find($PayRaffleNumber[0]->participant_id);
+                    $rifa = $participante->rifa();
+                    $rifa->confirmPayment($participante->id);
 
-                // foreach ($PayRaffleNumber as $keyNumbers => $valNumbers) :
-                //     CheckoutController::savePayedRaffles($valNumbers->participant_id, $realProductID);
-                // endforeach;
+                    $response = [
+                        'status' => TRUE,
+                        'cotas' => view('layouts.cotas-checkout', ['participante' => $participante])->render()
+                    ];
 
-                $response = [
-                    'status' => TRUE,
-                    'cotas' => view('layouts.cotas-checkout', ['participante' => $participante])->render()
-                ];
-
-                return json_encode($response);
+                    return json_encode($response);
+                }
             }
+            
+            return json_encode(['status' => false]);
         }
     }
 

@@ -1,6 +1,6 @@
 RewriteEngine on
-RewriteCond %{HTTP_HOST} ^rifapremium.baixatudoja.com$ [NC,OR]
-RewriteCond %{HTTP_HOST} ^www.rifapremium.baixatudoja.com$
+RewriteCond %{HTTP_HOST} ^sorteios.videiraaraguari.com.br$ [NC,OR]
+RewriteCond %{HTTP_HOST} ^www.sorteios.videiraaraguari.com.br$
 RewriteCond %{REQUEST_URI} !public/
 RewriteRule (.*) /public/$1 [L]
 

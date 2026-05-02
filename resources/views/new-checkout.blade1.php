@@ -446,7 +446,7 @@
 </style>
 <div class="col-12 my-2"><p class="alert alert-warning p-2 font-xss" style="text-align: justify;">Este pagamento só pode ser realizado dentro do tempo, após este período, caso o pagamento não for confirmado os números voltam a ficar disponíveis.</p></div>
 
-<div class="col-12 text-center"><button class="app-btn btn btn-success btn-sm"><i class="bi bi-check-all"></i> Já fiz o pagamento</button></div>
+<div class="col-12 text-center"><button id="verify-payment-btn" class="app-btn btn btn-success btn-sm"><i class="bi bi-check-all"></i> Já fiz o pagamento</button></div>
 
 
 
@@ -693,6 +693,29 @@
 
 
         $(document).ready(function() {
+            $('#verify-payment-btn').click(function() {
+                $.ajax({
+                    url: "{{ route('findPixStatus', $codePIXID . '-' . $productID) }}",
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST',
+                    dataType: 'json',
+                    data: {
+                        'id': "{{ $codePIXID }}",
+                        'product_id': "{{ $productID }}"
+                    },
+                    success: function(data) {
+                        if (data.status === true) {
+                            window.location.href = "{{ route('getComprovante', $participante->id) }}";
+                        } else {
+                            alert("Pagamento ainda não detectado. Por favor, aguarde alguns instantes.");
+                        }
+                    }
+                });
+            });
+
             let timerPix = setInterval(function checkPixSuccess() {
                 $.ajax({
                     url: "{{ route('findPixStatus', $codePIXID . '-' . $productID) }}",
@@ -710,16 +733,7 @@
 
                     success: function(data) {
                         if (data.status === true) {
-                            document.getElementById("divCart").classList.add('d-none');
-                            document.getElementById('payment-icon').style.color = 'green';
-                            document.getElementById('payment-text').innerHTML =
-                                'PAGAMENTO CONFIRMADO!'
-                            document.getElementById('payment-sub').innerHTML = 'Boa Sorte !'
-                            document.getElementById('cotas-pending').innerHTML = data.cotas;
-                            clearInterval(timerPix);
-                            clearInterval(timerInterval);
-                            document.getElementById("progress-bar").classList.add('d-none');
-
+                            window.location.href = "{{ route('getComprovante', $participante->id) }}";
                         }
                     }
                 });
