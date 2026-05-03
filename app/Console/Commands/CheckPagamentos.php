@@ -6,6 +6,8 @@ use App\Models\Participante;
 use App\Models\Raffle;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use MercadoPago\Client\Payment\PaymentClient;
+use MercadoPago\MercadoPagoConfig;
 
 class CheckPagamentos extends Command
 {
@@ -47,7 +49,8 @@ class CheckPagamentos extends Command
 
         $secretKey = $codeKeyPIX->key_pix;
 
-        \MercadoPago\SDK::setAccessToken($secretKey);
+        MercadoPagoConfig::setAccessToken($secretKey);
+        $client = new PaymentClient();
 
         $pendentes = DB::table('payment_pix')->where('status', '=', 'Pendente')->where('key_pix', '!=', '')->get();
 
@@ -58,7 +61,11 @@ class CheckPagamentos extends Command
                 if ($checkReserva) {
                     $realPixID = $value->key_pix;
 
-                    $payment = \MercadoPago\Payment::find_by_id($realPixID);
+                    try {
+                        $payment = $client->get($realPixID);
+                    } catch (\Exception $e) {
+                        $payment = null;
+                    }
 
                     if ($payment) {
                         if ($payment->status == 'cancelled') {

@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Payment\PaymentClient;
 use QRcode;
 
 class CheckoutController extends Controller
@@ -137,35 +139,40 @@ class CheckoutController extends Controller
             $secretKey = $codeKeyPIX->key_pix;
         }
 
-        \MercadoPago\SDK::setAccessToken($secretKey);
+        MercadoPagoConfig::setAccessToken($secretKey);
 
-        $payment = new \MercadoPago\Payment();
+        $client = new PaymentClient();
+        //$payment = new \MercadoPago\Resources\Payment();
+        $payment_data = [
+            "transaction_amount" => 0.11,
+            "description" => "Título do produto",
+            "payment_method_id" => "pix",
+            "notification_url" => "https://google.com.br/notiification.php",
+            "external_reference" => 1520,
+            "payer" => [
+                "email" => "tester@email.com",
+                "first_name" => "Test",
+                "last_name" => "User",
+                "identification" => [
+                    "type" => "CPF",
+                    "number" => "62103474368"
+                ],
+                "address" => [
+                    "zip_code" => "06233200",
+                    "street_name" => "Av. das Nações Unidas",
+                    "street_number" => "3003",
+                    "neighborhood" => "Bonfim",
+                    "city" => "Osasco",
+                    "federal_unit" => "SP"
+                ]
+            ]
+        ];
 
-        //$payment = new MercadoPago\Payment();
-        $payment->transaction_amount = 0.11;
-        $payment->description = "Título do produto";
-        $payment->payment_method_id = "pix";
-        $payment->notification_url = "https://google.com.br/notiification.php";
-        $payment->external_reference = 1520;
-        $payment->payer = array(
-            "email" => "tester@email.com",
-            "first_name" => "Test",
-            "last_name" => "User",
-            "identification" => array(
-                "type" => "CPF",
-                "number" => "62103474368"
-            ),
-            "address" =>  array(
-                "zip_code" => "06233200",
-                "street_name" => "Av. das Nações Unidas",
-                "street_number" => "3003",
-                "neighborhood" => "Bonfim",
-                "city" => "Osasco",
-                "federal_unit" => "SP"
-            )
-        );
-
-        $payment->save();
+        try {
+            $payment = $client->create($payment_data);
+        } catch (\Exception $e) {
+            // Log or handle error
+        }
         //
         echo "<pre>";
         var_dump($payment->id);
@@ -304,9 +311,14 @@ class CheckoutController extends Controller
                 $secretKey = $codeKeyPIX->key_pix;
             }
 
-            \MercadoPago\SDK::setAccessToken($secretKey);
+            MercadoPagoConfig::setAccessToken($secretKey);
 
-            $payment = \MercadoPago\Payment::find_by_id($realPixID);
+            $client = new PaymentClient();
+            try {
+                $payment = $client->get($realPixID);
+            } catch (\Exception $e) {
+                $payment = null;
+            }
 
             if ($payment && $payment->status == "approved" && $payment->status_detail == "accredited") {
 
@@ -929,25 +941,30 @@ class CheckoutController extends Controller
             $secretKey = $codeKeyPIX->key_pix;
         }
 
-        \MercadoPago\SDK::setAccessToken($secretKey);
+        MercadoPagoConfig::setAccessToken($secretKey);
 
-        $payment = new \MercadoPago\Payment();
-        $payment->transaction_amount = (float)$request[0]['transaction_amount'];
-        $payment->token = $request[0]['token'];
-        //$payment->description = $request[0]['description'];
-        $payment->installments = (int)$request[0]['installments'];
-        $payment->payment_method_id = $request[0]['payment_method_id'];
-        $payment->issuer_id = (int)$request[0]['issuer_id'];
+        $client = new PaymentClient();
+        
+        $payment_request = [
+            "transaction_amount" => (float)$request[0]['transaction_amount'],
+            "token" => $request[0]['token'],
+            "installments" => (int)$request[0]['installments'],
+            "payment_method_id" => $request[0]['payment_method_id'],
+            "issuer_id" => (int)$request[0]['issuer_id'],
+            "payer" => [
+                "email" => $request[0]['payer']['email'],
+                "identification" => [
+                    "type" => $request[0]['payer']['identification']['type'],
+                    "number" => $request[0]['payer']['identification']['number']
+                ]
+            ]
+        ];
 
-        $payer = new \MercadoPago\Payer();
-        $payer->email = $request[0]['payer']['email'];
-        $payer->identification = array(
-            "type" => $request[0]['payer']['identification']['type'],
-            "number" => $request[0]['payer']['identification']['number']
-        );
-        $payment->payer = $payer;
-
-        $payment->save();
+        try {
+            $payment = $client->create($payment_request);
+        } catch (\Exception $e) {
+            // Handle error
+        }
 
         $response_fields = array(
             'status' => $payment->status,

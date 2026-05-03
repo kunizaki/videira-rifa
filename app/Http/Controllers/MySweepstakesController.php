@@ -22,6 +22,8 @@ use App\Product;
 use MongoDB\Driver\Session;
 use function foo\func;
 use App\Models\Raffle;
+use MercadoPago\Client\Payment\PaymentClient;
+use MercadoPago\MercadoPagoConfig;
 use App\Promocao;
 use App\SolicitacaoAfiliado;
 use App\Upsell;
@@ -866,7 +868,7 @@ class MySweepstakesController extends Controller
 
         if($request->key){
             try {
-                \MercadoPago\SDK::setAccessToken($request->key);
+                MercadoPagoConfig::setAccessToken($request->key);
             } catch (\Throwable $th) {
                 return Redirect::back()->withErrors('ACCESS TOKEN MERCADO PAGO INVÁLIDO.');
             }
@@ -1215,23 +1217,25 @@ class MySweepstakesController extends Controller
 
                     $resultPricePIX = number_format($totalCompra, 2, ".", ",");
 
-                    \MercadoPago\SDK::setAccessToken($codeKeyPIX->key_pix);
+                    MercadoPagoConfig::setAccessToken($codeKeyPIX->key_pix);
 
                     $resultPricePIX = str_replace(",", "", $resultPricePIX);
 
-                    $payment = new \MercadoPago\Payment();
-                    $payment->transaction_amount = $resultPricePIX;
-                    $payment->description = "Participação da ação " . $rifa->id . ' - ' . $rifa->name;
-                    $payment->payment_method_id = "pix";
-
-                    $payment->payer = array(
-                        "email" => "teste.nienow@email.com",
-                        "first_name" => $request->nome,
-                        "identification" => array(
-                            "type" => "hash",
-                            "number" => date('YmdHis')
-                        )
-                    );
+                    $client = new PaymentClient();
+                    
+                    $payment_request = [
+                        "transaction_amount" => floatval($resultPricePIX),
+                        "description" => "Participação da ação " . $rifa->id . ' - ' . $rifa->name,
+                        "payment_method_id" => "pix",
+                        "payer" => [
+                            "email" => "teste.nienow@email.com",
+                            "first_name" => $request->nome,
+                            "identification" => [
+                                "type" => "hash",
+                                "number" => date('YmdHis')
+                            ]
+                        ]
+                    ];
 
                     $participante = DB::table('participant')->insertGetId([
                         'name' => $request->nome,
@@ -1247,22 +1251,19 @@ class MySweepstakesController extends Controller
                         'updated_at' => Carbon::now()
                     ]);
 
-
-
                     //Gravando o id do participante para utilizar na notificacao
-                    $payment->notification_url   = env('APP_ENV') == 'local' ? '' : route('api.notificaoMP');
-                    $payment->external_reference = $participante;
-                    $payment->save();
+                    $payment_request["notification_url"] = env('APP_ENV') == 'local' ? '' : route('api.notificaoMP');
+                    $payment_request["external_reference"] = (string)$participante;
 
-                    $object = (object) $payment;
-
-                    if (isset($object->error->message) == 'Invalid user identification number') {
-                        return Redirect::back()->withErrors('CPF invalido digite corretamente!');
+                    try {
+                        $payment = $client->create($payment_request);
+                        $codePIXID = $payment->id;
+                        $codePIX = $payment->point_of_interaction->transaction_data->qr_code;
+                        $qrCode = $payment->point_of_interaction->transaction_data->qr_code_base64;
+                    } catch (\Exception $e) {
+                        // Handle error
+                        return Redirect::back()->withErrors('Erro ao gerar pagamento Mercado Pago: ' . $e->getMessage());
                     }
-
-                    $codePIXID = $object->id;
-                    $codePIX = $object->point_of_interaction->transaction_data->qr_code;
-                    $qrCode = $object->point_of_interaction->transaction_data->qr_code_base64;
 
                     $paymentPIX = DB::table('payment_pix')->insert([
                         'key_pix' => $codePIXID,

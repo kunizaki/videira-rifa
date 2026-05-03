@@ -26,6 +26,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Payment\PaymentClient;
 use QRcode;
 
 class ProductController extends Controller
@@ -855,46 +857,38 @@ class ProductController extends Controller
         ->first();
 
         if ($product->gateway == 'mp') {
-          /* OLD MERCADOPAGO
+            /* OLD MERCADOPAGO
           
-          \MercadoPago\SDK::setAccessToken($codeKeyPIX->key_pix);
+          MercadoPagoConfig::setAccessToken($codeKeyPIX->key_pix);
 
             $resultPricePIX = str_replace(",", "", $resultPricePIX);
 
-            $payment = new \MercadoPago\Payment();
-            $payment->transaction_amount = $resultPricePIX;
-            $payment->description = "Participação da ação " . $product->id . ' - ' . $product->name;
-            $payment->payment_method_id = "pix";
+            $client = new PaymentClient();
+            $payment_request = [
+                "transaction_amount" => floatval($resultPricePIX),
+                "description" => "Participação da ação " . $product->id . ' - ' . $product->name,
+                "payment_method_id" => "pix",
+                "payer" => [
+                    "email" => $email ? $email : "mestredoscript@gmail.com",
+                    "first_name" => $name,
+                    "identification" => [
+                        "type" => "hash",
+                        "number" => date('YmdHis')
+                    ]
+                ],
+                "notification_url" => env('APP_NAME') == 'local' ? "" : route("api.notificaoMP"),
+                "external_reference" => (string)$participante
+            ];
 
-
-            $payment->payer = array(
-                "email" => $email ? $email : "mestredoscript@gmail.com",
-                "first_name" => $name,
-                "identification" => array(
-                    "type" => "hash",
-                    "number" => date('YmdHis')
-                )
-            );
-
-            $payment->notification_url = env('APP_NAME') == 'local' ? '' : route('api.notificaoMP');
-            $payment->external_reference = $participante;
-            $payment->save();
-
-            $object = (object) $payment;
-
-            if (isset($object->error->message) == 'payer.email must be a valid email') {
-                $response['error'] = 'Erro ao gerar o QR Code!';
-                return $response;
+            try {
+                $payment = $client->create($payment_request);
+                $codePIXID = $payment->id;
+                $codePIX = $payment->point_of_interaction->transaction_data->qr_code;
+                $qrCode = $payment->point_of_interaction->transaction_data->qr_code_base64;
+            } catch (\Exception $e) {
+                 $response['error'] = 'Erro ao gerar o QR Code!';
+                 return $response;
             }
-
-            if (isset($object->error->message) == 'Invalid user identification number') {
-                $response['error'] = 'CPF inválido!';
-                return $response;
-            }
-
-            $codePIXID = $object->id;
-            $codePIX = $object->point_of_interaction->transaction_data->qr_code;
-            $qrCode = $object->point_of_interaction->transaction_data->qr_code_base64;
 
             $response['codePIXID'] = $codePIXID;
             $response['codePIX'] = $codePIX;
@@ -1299,13 +1293,15 @@ class ProductController extends Controller
             $secretKey = $codeKeyPIX->key_pix;
         }
 
-        \MercadoPago\SDK::setAccessToken($secretKey);
+        MercadoPagoConfig::setAccessToken($secretKey);
 
-        $payment = new \MercadoPago\Payment();
-
-        $payment = \MercadoPago\Payment::find_by_id($keyPix);
-        $payment->capture = true;
-        $payment->update();
+        $client = new PaymentClient();
+        try {
+            $payment = $client->get($keyPix);
+            $payment = $client->capture($keyPix);
+        } catch (\Exception $e) {
+            $payment = null;
+        }
         dd($payment);
     }
 
@@ -1319,9 +1315,14 @@ class ProductController extends Controller
             
             $accessToken = $codeKeyPIX->key_pix;
 
-            \MercadoPago\SDK::setAccessToken($accessToken);
+            MercadoPagoConfig::setAccessToken($accessToken);
 
-            $payment = \MercadoPago\Payment::find_by_id($request->id);
+            $client = new PaymentClient();
+            try {
+                $payment = $client->get($request->id);
+            } catch (\Exception $e) {
+                $payment = null;
+            }
 
             if ($payment) {
                 if ($payment->status == 'cancelled') {

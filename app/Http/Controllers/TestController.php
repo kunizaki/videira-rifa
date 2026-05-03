@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
 use Illuminate\Support\Facades\Http;
+use MercadoPago\Client\Payment\PaymentClient;
+use MercadoPago\MercadoPagoConfig;
 
 //use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -353,7 +355,8 @@ class TestController extends Controller
         $appOsincriveis = 'APP_USR-5261151288450206-070203-6d3620d89d07ea1a4b47999ea3b80252-781237219';
         $secretKey = $lsRifas;
 
-        \MercadoPago\SDK::setAccessToken($secretKey);
+        MercadoPagoConfig::setAccessToken($secretKey);
+        $client = new PaymentClient();
 
         $pendentes = Payment_pix::where('status', '=', 'Pendente')->get();
 
@@ -367,9 +370,12 @@ class TestController extends Controller
 
         $result = [];
         foreach ($codes as $code) {
-            $payment = \MercadoPago\Payment::find_by_id($code);
-
-            array_push($result, $code . ' - ' . $payment->status . ' => URL: ' . $payment->notification_url);
+            try {
+                $payment = $client->get($code);
+                array_push($result, $code . ' - ' . $payment->status . ' => URL: ' . $payment->notification_url);
+            } catch (\Exception $e) {
+                array_push($result, $code . ' - Error: ' . $e->getMessage());
+            }
         }
 
         dd($result);
