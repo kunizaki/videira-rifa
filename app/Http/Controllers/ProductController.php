@@ -939,13 +939,31 @@ class ProductController extends Controller
 
             $responsex = curl_exec($ch); 
             $data = json_decode($responsex, true);  
-
-             
             curl_close($ch); 
 
+            if (!isset($data['id'])) {
+                \Log::error('Erro ao gerar PIX no Mercado Pago', [
+                    'response' => $data,
+                    'payment_data' => $payment_data,
+                    'product_id' => $product->id
+                ]);
+
+                $errorMessage = 'Erro ao gerar o QR Code!';
+                if (isset($data['message'])) {
+                    if ($data['message'] == 'payer.email must be a valid email') {
+                        $errorMessage = 'E-mail do pagador inválido!';
+                    } elseif ($data['message'] == 'Invalid user identification number') {
+                        $errorMessage = 'CPF inválido!';
+                    }
+                }
+                
+                $response['error'] = $errorMessage;
+                return $response;
+            }
+
             $codePIXID = $data['id'];
-            $codePIX = $data['point_of_interaction']['transaction_data']['qr_code'];
-            $qrCode = $data['point_of_interaction']['transaction_data']['qr_code_base64'];
+            $codePIX = $data['point_of_interaction']['transaction_data']['qr_code'] ?? '';
+            $qrCode = $data['point_of_interaction']['transaction_data']['qr_code_base64'] ?? '';
 
             $response['codePIXID'] = $codePIXID;
             $response['codePIX'] = $codePIX;
